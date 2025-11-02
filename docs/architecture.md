@@ -39,7 +39,15 @@ This pipeline manages the conversion of human speech into system-readable text a
 | **STT**            | **Speech-to-Text:** Transcribes the captured raw audio data into a plain text string.                     | Raw Audio Data -> "User Command" Text   |
 | **TTS**            | **Text-to-Speech:** Converts a final text response (from a task module or the LLM) into synthesized speech. | "Final Response" Text -> Spoken Audio |
 
-### Table 2: Command/Task Execution Modules
+### Table 2: Intent Parsing and Routing
+
+This component acts as the brain of the system, deciding where to route the user's transcribed command.
+
+| Component       | Description                                                                                                                                                             | Data Flow                                                              |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Intent Parser** | Analyzes the text from the STT to determine the user's intent. It uses a combination of techniques to match the command against a list of predefined tasks, even if the phrasing differs slightly. This often involves **keyword spotting** (looking for words like "volume" or "weather") and **fuzzy string matching** to calculate a similarity score against known command patterns. If a match is found above a confidence threshold, the corresponding task is triggered. If no match is found, the input is treated as a dynamic query for the LLM. | "User Command" Text -> "Intent" (e.g., Volume, News) + [Parameters] |
+
+### Table 3: Command/Task Execution Modules
 
 These modules are responsible for handling specific, predefined user commands.
 
@@ -49,7 +57,7 @@ These modules are responsible for handling specific, predefined user commands.
 | **Time/Weather**  | Fetches and formats the current time, date, or weather information from a reliable source.              | "What time is it?" Command -> Formatted Response |
 | **Custom Tasks**  | A module for other simple, user-defined commands that have a direct, predictable outcome.                | "Custom Command" -> Pre-scripted Action         |
 
-### Table 3: LLM Integration and Data Flow
+### Table 4: LLM Integration and Data Flow
 
 This flow is activated for queries that are not recognized as direct commands.
 
