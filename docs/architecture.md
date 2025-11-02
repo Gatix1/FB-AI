@@ -100,3 +100,37 @@ This flow demonstrates the direct path for a simple, predefined command.
 3.  **Command Processing:** The backend recognizes this as a direct command and bypasses the LLM entirely.
 4.  **Volume Control Module:** The backend invokes the Volume Control module, which executes the system-level action to increase the master volume. A simple confirmation response (e.g., "Done") may be generated.
 5.  **TTS:** The confirmation text "Done" is sent to the TTS engine, which provides audible feedback to the user.
+
+## 6. Team Roles and Work Distribution
+
+To facilitate parallel development for a team of six, the project can be broken down into the following distinct roles and responsibilities. Each part corresponds to a set of related components from the architecture.
+
+### Part 1: Voice I/O Developer
+*   **Focus:** Capturing and transcribing user voice commands.
+*   **Components:** Wake-Word Detection (WWD), Voice Recognition (Audio Capture), Speech-to-Text (STT), Text-to-Speech (TTS).
+*   **Primary Deliverable:** A consolidated module for all voice interactions: one part that listens and returns text, and another part that accepts text and produces audio.
+
+### Part 2: Intent Parsing Developer
+*   **Focus:** Understanding the user's intent from the transcribed text.
+*   **Components:** Intent Parser.
+*   **Primary Deliverable:** A module that takes a text string and either identifies a predefined command (with parameters) or flags it as a dynamic query for the LLM.
+
+### Part 3: System & Media Control Developer
+*   **Focus:** Executing commands related to media playback and system functions.
+*   **Components:** Media/Volume Module, KODI Integration.
+*   **Primary Deliverable:** A module with functions to control system volume and interact with the KODI API for media playback.
+
+### Part 4: Information Task Developer
+*   **Focus:** Handling predefined commands that provide users with specific information.
+*   **Components:** Time/Weather Module, Custom Tasks.
+*   **Primary Deliverable:** A module with functions that fetch and format data for time, weather, and other simple, user-defined queries.
+
+### Part 5: Dynamic Information Developer
+*   **Focus:** Fetching and preparing data from external sources for dynamic queries.
+*   **Components:** Dynamic Info (Google Search).
+*   **Primary Deliverable:** A module with a function that takes a query (e.g., "latest news") and returns structured data fetched from an external API like Google Search.
+
+### Part 6: Backend Orchestrator & LLM Developer
+*   **Focus:** Managing the main application flow and interfacing with the Large Language Model.
+*   **Components:** Main application logic, LLM Integration.
+*   **Primary Deliverable:** The main executable script that runs the application and a module to handle LLM communication. This role is responsible for receiving input from the Intent Parser and routing it to the correct Task Developer or the LLM.
