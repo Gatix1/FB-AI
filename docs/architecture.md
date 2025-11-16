@@ -134,3 +134,74 @@ To facilitate parallel development for a team of six, the project can be broken 
 *   **Focus:** Managing the main application flow and interfacing with the Large Language Model.
 *   **Components:** Main application logic, LLM Integration.
 *   **Primary Deliverable:** The main executable script that runs the application and a module to handle LLM communication. This role is responsible for receiving input from the Intent Parser and routing it to the correct Task Developer or the LLM.
+
+## 7. Detailed Task Breakdown and Integration Plan
+
+This section expands on the team roles, detailing specific tasks and explaining how the individual components will interface with one another. The integration points are key to ensuring a smooth workflow and a functional final product.
+
+### Part 1: Voice I/O Developer
+*   **Tasks:**
+    *   Implement wake-word detection using a library like `pvporcupine`.
+    *   Implement audio recording from the microphone upon wake-word trigger using a library like `pyaudio`.
+    *   Integrate a Speech-to-Text (STT) engine (e.g., `vosk`, `whisper`) to convert the recorded audio into a text string.
+    *   Integrate a Text-to-Speech (TTS) engine (e.g., `pyttsx3`, `gTTS`) to convert a final response string into audible speech.
+*   **Integration:**
+    *   **Provides:** A function like `listen_for_command()` that waits for the wake word, records, transcribes, and returns a text string to the **Backend Orchestrator (Part 6)**.
+    *   **Provides:** A function like `speak(text)` that accepts a string from the **Backend Orchestrator (Part 6)** and vocalizes it. The following public functions must be exported for the main module to use:
+        *   `listen_for_command() -> str`: This function handles the entire voice input process. It continuously listens for the wake word, and upon detection, records the user's speech, transcribes it to text, and returns the resulting string.
+        *   `speak(text: str) -> None`: This function takes a text string and uses the configured TTS engine to convert it into audible speech for the user.
+
+### Part 2: Intent Parsing Developer
+*   **Tasks:**
+    *   Define a clear list of supported commands and their variations (e.g., "turn volume up," "increase volume").
+    *   Implement keyword spotting to identify primary actions ("volume," "weather," "play").
+    *   Use fuzzy string matching (e.g., with `fuzzywuzzy`) to handle variations in phrasing.
+    *   Create a function that returns a structured object (e.g., a dictionary) representing the intent and any parameters.
+*   **Integration:**
+    *   **Receives:** A text string from the **Backend Orchestrator (Part 6)**.
+    *   **Provides:** A structured object (e.g., `{"intent": "set_volume", "parameters": {"direction": "up"}}`) or a "dynamic query" flag back to the **Backend Orchestrator (Part 6)**. The following public function must be exported for the main module to use:
+        *   `parse_intent(command_text: str) -> dict`: This function analyzes the user's transcribed command. It returns a dictionary containing the identified `intent` and any extracted `parameters`. If no predefined command is matched, it should return a dictionary indicating a dynamic query for the LLM, for example: `{"intent": "dynamic_query", "parameters": {"query": command_text}}`.
+
+### Part 3: System & Media Control Developer
+*   **Tasks:**
+    *   Write Python functions to control system master volume (e.g., using `pycaw` for Windows or shell commands for Linux/macOS).
+    *   Implement a client to interact with the KODI JSON-RPC API for functions like play, pause, stop, and next/previous track.
+    *   Ensure functions are modular and accept simple parameters (e.g., `set_volume(level)`).
+*   **Integration:**
+    *   **Provides:** A module with functions like `increase_volume()`, `kodi_play_pause()` that the **Backend Orchestrator (Part 6)** can call based on the parsed intent from **Part 2**.
+    *   **Returns:** A simple confirmation string (e.g., "Done" or "Playing media") to the Orchestrator. The following public functions must be exported for the main module to use:
+        *   `set_volume(direction: str, value: int = None) -> str`: Adjusts the system volume. The `direction` can be "up" or "down". If `value` is provided, it sets the volume to a specific level. Returns a confirmation string like "Volume increased."
+        *   `kodi_play_pause() -> str`: Toggles the play/pause state of the KODI media player. Returns a confirmation string.
+        *   `kodi_stop() -> str`: Stops the currently playing media in KODI. Returns a confirmation string.
+        *   `kodi_next() -> str`: Skips to the next item in the KODI playlist. Returns a confirmation string.
+
+### Part 4: Information Task Developer
+*   **Tasks:**
+    *   Write a function to get the current time and date using the `datetime` library.
+    *   Integrate with a weather API (e.g., OpenWeatherMap) to fetch weather data for a given location.
+    *   Format the fetched information into natural-sounding response strings.
+*   **Integration:**
+    *   **Provides:** A module with functions like `get_current_time()` and `get_weather(location)` that the **Backend Orchestrator (Part 6)** can call.
+    *   **Returns:** A formatted string (e.g., "The current time is 4:30 PM") to the Orchestrator. The following public functions must be exported for the main module to use:
+        *   `get_current_time() -> str`: Fetches the current system time and formats it into a user-friendly sentence.
+        *   `get_weather(location: str = "default") -> str`: Fetches the current weather for the specified `location` from an external API and formats it into a conversational response.
+
+### Part 5: Dynamic Information Developer
+*   **Tasks:**
+    *   Set up access to a search API (e.g., Google Custom Search JSON API).
+    *   Write a function that takes a user's query text (e.g., "latest news") and performs a search.
+    *   Process the API response to extract the most relevant information (e.g., top 3 headlines and snippets).
+*   **Integration:**
+    *   **Receives:** A query string from the **Backend Orchestrator (Part 6)**.
+    *   **Provides:** A function that returns structured data (e.g., a list of news articles) to the **Backend Orchestrator (Part 6)**, which will then be passed to the LLM. The following public function must be exported for the main module to use:
+        *   `fetch_dynamic_info(query: str) -> str`: Takes the user's raw query, performs a search using an external API (like Google Search), and returns a formatted string containing the most relevant information (e.g., top search results or news headlines). This string will serve as context for the LLM.
+
+### Part 6: Backend Orchestrator & LLM Developer
+*   **Tasks:**
+    *   Create the main application loop (`main.py`) that initializes and runs the system.
+    *   Write the core logic to connect all other parts as described in the data flow.
+    *   Implement the function to call the **Intent Parser (Part 2)**.
+    *   Write the routing logic to call the correct task module (**Part 3, 4, 5**) or the LLM based on the intent.
+    *   Write a module to format prompts and send requests to the LLM API, including any context from **Part 5**.
+*   **Integration:**
+    *   **Acts as the central controller.** Connects all modules together and integrates with the LLM.
