@@ -1,10 +1,9 @@
 import platform
 import subprocess
-import requests
-from typing import Optional
+from typing import Optional, Dict
 
 
-def set_volume(value: int = 5, direction: Optional[str] = None) -> str:
+def set_volume(value: int = 15, direction: Optional[str] = None) -> str:
     """
     Controls the system's master volume.
 
@@ -152,6 +151,26 @@ def media_previous() -> str:
     """
     return _send_media_key("prevtrack")
 
+
+def play_song(song_name: str) -> str:
+    """
+    Searches for and plays a song on YouTube.
+
+    Args:
+        song_name (str): The name of the song to play.
+
+    Returns:
+        A confirmation or error string.
+    """
+    try:
+        import pywhatkit
+        pywhatkit.playonyt(song_name)
+        return f"Playing {song_name} on YouTube."
+    except ImportError:
+        return "Could not play song: 'pywhatkit' library not found. Please run 'pip install pywhatkit'."
+    except Exception as e:
+        return f"Sorry, I could not play the song. An error occurred: {e}"
+
 # Testing
 if __name__ == "__main__":
     print("Setting volume to 50%...")
@@ -163,5 +182,5 @@ if __name__ == "__main__":
     print("\nDecreasing volume by 10%...")
     print(set_volume(value=40, direction="down"))
 
-    print("\nToggling play/pause...")
-    print(media_play_pause())
+    print("\nPlaying a song on YouTube...")
+    print(play_song("Never Gonna Give You Up"))
