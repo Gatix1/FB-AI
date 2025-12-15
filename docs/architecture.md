@@ -207,3 +207,4 @@ This section expands on the team roles, detailing specific tasks and explaining 
     *   Write a module to format prompts and send requests to the LLM API, including any context from **Part 5**.
 *   **Integration:**
     *   **Acts as the central controller.** Connects all modules together and integrates with the LLM.
+    *   **Provides:** A module with a function `generate_response(query: str, context: str = None) -> str` that takes the user's query and optional search context, returning a text response from the LLM.
