@@ -3,11 +3,25 @@ from fuzzywuzzy import fuzz
 from typing import Dict, Any, List, Tuple
 import re
 
+# Mapping of number words to their numeric values
+NUMBER_WORDS = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
+    "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20,
+    "twenty-one": 21, "twenty-two": 22, "twenty-three": 23, "twenty-four": 24, "twenty-five": 25,
+    "twenty-six": 26, "twenty-seven": 27, "twenty-eight": 28, "twenty-nine": 29, "thirty": 30,
+    "thirty-five": 35, "forty": 40, "forty-five": 45, "fifty": 50,
+    "fifty-five": 55, "sixty": 60, "sixty-five": 65, "seventy": 70,
+    "seventy-five": 75, "eighty": 80, "eighty-five": 85, "ninety": 90,
+    "ninety-five": 95, "hundred": 100, "one hundred": 100
+}
+
 # Define the known intents and the keywords/phrases that trigger them.
 # This structure allows for multiple phrases to map to a single intent.
 INTENT_MAP = {
     "set_volume": ["volume", "sound"],
-    "media_play_pause": ["play", "pause", "unpause"],
+    "media_play_pause": ["play", "pause", "unpause", "pose"],
     "media_stop": ["stop"],
     "media_next": ["next song", "next track", "skip", "next"],
     "play_song": ["play the song", "play song", "music", "song"],
@@ -24,7 +38,7 @@ ALL_PHRASES = [phrase for phrases in INTENT_MAP.values() for phrase in phrases]
 # If a query is not a predefined command and does not contain these triggers,
 # it will be treated as a general conversational query for the LLM.
 DYNAMIC_INFO_TRIGGERS = [
-    "what is", "what's", "what are", "who are", "where are", "when are",
+    "what are", "who are", "where are", "when are",
     "who is", "who's",
     "where is", "where's",
     "when is", "when's",
@@ -50,13 +64,21 @@ def _extract_parameters(command_text: str, intent: str) -> Dict[str, Any]:
 
     if intent == "set_volume":
         direction = None
-        if "up" in words:
+        
+        # Keywords that indicate increasing volume
+        increase_keywords = ["up", "increase", "raise", "higher", "louder"]
+        # Keywords that indicate decreasing volume
+        decrease_keywords = ["down", "decrease", "reduce", "lower", "quieter", "softer"]
+        
+        # Check for direction keywords
+        if any(keyword in words for keyword in increase_keywords):
             direction = "up"
-        elif "down" in words or "lower" in words:
+        elif any(keyword in words for keyword in decrease_keywords):
             direction = "down"
 
-        # Find the first number in the command.
+        # Find the first number in the command (check both digits and number words)
         value = None
+        # First try to find numeric digits
         for word in words:
             cleaned_word = word.replace('%', '')
             try:
@@ -64,6 +86,13 @@ def _extract_parameters(command_text: str, intent: str) -> Dict[str, Any]:
                 break
             except ValueError:
                 continue # Not a number
+        
+        # If no digit found, check for number words
+        if value is None:
+            for word in words:
+                if word in NUMBER_WORDS:
+                    value = NUMBER_WORDS[word]
+                    break
         
         if direction:
             # If a direction is specified, the number is the adjustment amount.
@@ -75,6 +104,17 @@ def _extract_parameters(command_text: str, intent: str) -> Dict[str, Any]:
             parameters["value"] = value
 
     if intent == "get_weather":
+        # Extract time period (tomorrow, this week, etc.)
+        time_period = "current"  # default
+        if "tomorrow" in words:
+            time_period = "tomorrow"
+        elif "week" in words or "7 days" in command_text.lower():
+            time_period = "week"
+        elif "today" in words or "now" in words or "currently" in words:
+            time_period = "current"
+        
+        parameters["when"] = time_period
+        
         # Example for extracting location (e.g., "what's the weather in London")
         if "in" in words:
             try:
@@ -82,12 +122,17 @@ def _extract_parameters(command_text: str, intent: str) -> Dict[str, Any]:
                 if loc_index < len(words):
                     # Join all words after "in" to form the location
                     location = " ".join(words[loc_index:])
-                    # A simple way to remove trailing punctuation if any
-                    parameters["location"] = re.sub(r'[^\w\s]$', '', location).strip()
+                    # A simple way to remove trailing punctuation and filter out time-related words
+                    location = re.sub(r'[^\w\s]$', '', location).strip()
+                    # Remove time-related words like "tomorrow", "today", "tonight"
+                    time_words = ["tomorrow", "today", "tonight", "now", "currently", "week"]
+                    location_words = [word for word in location.split() if word not in time_words]
+                    if location_words:
+                        parameters["city"] = " ".join(location_words)
             except (ValueError, IndexError):
                 pass # Ignore if "in" is at the end of the sentence
 
-    if intent == "play_song":
+    elif intent == "play_song":
         # Find the trigger phrase and extract what comes after it.
         # e.g., "play the song [Bohemian Rhapsody]"
         trigger_phrases = INTENT_MAP["play_song"]

@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 
 def _clean_text(text: str) -> str:
@@ -18,7 +18,14 @@ def get_current_date():
     now = datetime.now()
     return now.strftime("Today's date is %B %d, %Y.")
 
-def get_weather(city="London"):
+def get_weather(city="London", when="current"):
+    """
+    Get weather information for a city.
+    
+    Args:
+        city: The city name
+        when: Time period - "current", "tomorrow", or "week"
+    """
     city_clean = _clean_text(city)
 
     geo_url = (
@@ -42,17 +49,25 @@ def get_weather(city="London"):
     if "results" not in geo_data or not geo_data["results"]:
         return f"Sorry, I could not find any location for '{city_clean}'."
 
-
     first_result = geo_data["results"][0]
     lat = first_result["latitude"]
     lon = first_result["longitude"]
     resolved_name = first_result.get("name", city_clean)
 
-
-    weather_url = (
-        "https://api.open-meteo.com/v1/forecast"
-        f"?latitude={lat}&longitude={lon}&current_weather=true&timezone=auto"
-    )
+    # Build API URL based on time period
+    if when == "current":
+        weather_url = (
+            "https://api.open-meteo.com/v1/forecast"
+            f"?latitude={lat}&longitude={lon}&current_weather=true&timezone=auto"
+        )
+    else:
+        # For forecasts, we need daily data
+        weather_url = (
+            "https://api.open-meteo.com/v1/forecast"
+            f"?latitude={lat}&longitude={lon}"
+            f"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max"
+            f"&timezone=auto"
+        )
 
     try:
         weather_response = requests.get(weather_url, timeout=5)
@@ -67,15 +82,42 @@ def get_weather(city="London"):
 
     try:
         weather_data = weather_response.json()
-        current = weather_data["current_weather"]
-        temp_c = current["temperature"]
-        wind = current["windspeed"]
-        return (
-            f"The current temperature in {resolved_name} is {temp_c}°C "
-            f"with wind speed {wind} km/h."
-        )
-    except Exception:
-        return f"Sorry, weather information is incomplete for {resolved_name}."
+        
+        if when == "current":
+            current = weather_data["current_weather"]
+            temp_c = current["temperature"]
+            wind = current["windspeed"]
+            return (
+                f"The current temperature in {resolved_name} is {temp_c}°C "
+                f"with wind speed {wind} km/h."
+            )
+        elif when == "tomorrow":
+            daily = weather_data["daily"]
+            # Tomorrow is index 1 (today is 0)
+            temp_max = daily["temperature_2m_max"][1]
+            temp_min = daily["temperature_2m_min"][1]
+            precip = daily["precipitation_sum"][1]
+            wind = daily["windspeed_10m_max"][1]
+            
+            response = (
+                f"Tomorrow in {resolved_name}, the temperature will be between {temp_min}°C and {temp_max}°C. "
+            )
+            if precip > 0:
+                response += f"Expect {precip}mm of precipitation. "
+            response += f"Max wind speed {wind} km/h."
+            return response
+        elif when == "week":
+            daily = weather_data["daily"]
+            temp_max_avg = sum(daily["temperature_2m_max"][:7]) / 7
+            temp_min_avg = sum(daily["temperature_2m_min"][:7]) / 7
+            total_precip = sum(daily["precipitation_sum"][:7])
+            
+            return (
+                f"This week in {resolved_name}, average temperatures will be between {temp_min_avg:.1f}°C and {temp_max_avg:.1f}°C. "
+                f"Total precipitation: {total_precip:.1f}mm."
+            )
+    except Exception as e:
+        return f"Sorry, weather information is incomplete for {resolved_name}. Error: {e}"
 
 def get_bitcoin_price():
     try:

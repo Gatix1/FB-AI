@@ -3,7 +3,7 @@ import subprocess
 from typing import Optional, Dict
 
 
-def set_volume(value: int = 15, direction: Optional[str] = None) -> str:
+def set_volume(value: int = 10, direction: Optional[str] = None) -> str:
     """
     Controls the system's master volume.
 
@@ -12,7 +12,7 @@ def set_volume(value: int = 15, direction: Optional[str] = None) -> str:
     - If `direction` is "down", decreases the volume by `value` percent.
 
     Args:
-        value (int): The percentage for setting or adjusting the volume. Defaults to 5.
+        value (int): The percentage for setting or adjusting the volume. Defaults to 10.
         direction (Optional[str]): "up", "down", or None. Defaults to None.
     """
     os_type = platform.system()

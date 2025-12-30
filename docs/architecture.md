@@ -74,7 +74,7 @@ The technology stack is intentionally lean to maintain focus and simplicity, ali
     *   **Rationale:** Python was chosen as the sole programming language for this project. Its extensive ecosystem of libraries for audio processing, web requests, and AI/ML model integration makes it ideal for rapid development and prototyping. Libraries for STT/TTS, API clients (for weather, search), and interacting with LLMs are readily available and well-documented. This simplifies the development process by allowing all components—from wake-word detection to command processing—to be built within a single, unified language environment.
 
 *   **Media Control: System-Level Integration**
-    *   **Rationale:** Media control is handled at the operating system level to provide broad compatibility with any active media player (e.g., Spotify, VLC, web browsers). This is achieved using libraries like `pycaw` (Windows), `pyautogui` (Windows), and command-line tools (`playerctl` for Linux, `osascript` for macOS), which simulate media key presses. This approach is more versatile than integrating with a single application like KODI.
+    *   **Rationale:** Media control is handled at the operating system level to provide broad compatibility with any active media player (e.g., Spotify, VLC, web browsers). This is achieved using libraries like `pycaw` (Windows), `pyautogui` (Windows), and command-line tools (`playerctl` for Linux, `osascript` for macOS), which simulate media key presses. This approach is versatile and works with any media application without requiring specific integrations.
 
 ## 5. Architectural Flow Examples
 
