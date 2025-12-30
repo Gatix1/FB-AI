@@ -1,0 +1,38 @@
+# FB-AI Voice Assistant - Python Dependencies
+
+# Audio Processing
+pyaudio==0.2.14
+vosk==0.3.45
+
+# Text-to-Speech
+gTTS==2.5.0
+pygame==2.5.2
+
+# Voice/Media Control
+pyttsx3==2.90
+
+# Windows-specific (for volume control)
+pycaw==20240210; sys_platform == 'win32'
+comtypes==1.4.1; sys_platform == 'win32'
+
+# Media playback
+pywhatkit==5.4
+
+# GUI automation (for media keys)
+pyautogui==0.9.54
+
+# Intent parsing
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.25.0
+
+# Web requests and APIs
+requests==2.31.0
+
+# Environment variables
+python-dotenv==1.0.1
+
+# LLM Integration
+groq==0.4.2
+
+# Scientific computing
+numpy==1.26.4

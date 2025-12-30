@@ -9,7 +9,7 @@ This document outlines the architectural design for the "FB-AI," a voice-control
 ### Core Goals
 
 *   **Voice Interaction:** To provide a hands-free user interface through voice, including wake-word detection, speech-to-text, and text-to-speech capabilities.
-*   **Defined Task Execution:** To reliably execute a specific set of commands, such as controlling media playback (e.g., KODI), managing system volume, and answering queries about time and weather.
+*   **Defined Task Execution:** To reliably execute a specific set of commands, such as controlling system-wide media playback, playing songs from YouTube, managing system volume, and answering queries about time and weather.
 *   **Dynamic Query Handling:** To use an external LLM to process and generate responses for queries that fall outside the scope of predefined tasks, such as requests for news or general information.
 *   **Simplicity and Focus:** To implement a streamlined and self-contained system that meets the specific requirements of a university-level project, prioritizing core functionality and successful demonstration.
 
@@ -53,7 +53,7 @@ These modules are responsible for handling specific, predefined user commands.
 
 | Component         | Description                                                                                             | Data Flow                                       |
 | ----------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| **Media/Volume**  | Manages media playback and system volume. Includes integration with external players like **KODI**.       | "Play/Pause/Volume" Command -> System Action    |
+| **Media/Volume**  | Manages system-wide media playback, plays specific songs via YouTube, and controls master system volume.  | "Play/Pause/Volume" Command -> System Action    |
 | **Time/Weather**  | Fetches and formats the current time, date, or weather information from a reliable source.              | "What time is it?" Command -> Formatted Response |
 | **Custom Tasks**  | A module for other simple, user-defined commands that have a direct, predictable outcome.                | "Custom Command" -> Pre-scripted Action         |
 
@@ -73,8 +73,8 @@ The technology stack is intentionally lean to maintain focus and simplicity, ali
 *   **Primary Language: Python**
     *   **Rationale:** Python was chosen as the sole programming language for this project. Its extensive ecosystem of libraries for audio processing, web requests, and AI/ML model integration makes it ideal for rapid development and prototyping. Libraries for STT/TTS, API clients (for weather, search), and interacting with LLMs are readily available and well-documented. This simplifies the development process by allowing all components—from wake-word detection to command processing—to be built within a single, unified language environment.
 
-*   **Media Control: KODI Integration**
-    *   **Rationale:** KODI is specified for media control due to its robust JSON-RPC API, which allows for easy and reliable control over playback, library management, and volume via simple network requests. This avoids the complexity of writing low-level media player integrations.
+*   **Media Control: System-Level Integration**
+    *   **Rationale:** Media control is handled at the operating system level to provide broad compatibility with any active media player (e.g., Spotify, VLC, web browsers). This is achieved using libraries like `pycaw` (Windows), `pyautogui` (Windows), and command-line tools (`playerctl` for Linux, `osascript` for macOS), which simulate media key presses. This approach is versatile and works with any media application without requiring specific integrations.
 
 ## 5. Architectural Flow Examples
 
@@ -117,8 +117,8 @@ To facilitate parallel development for a team of six, the project can be broken 
 
 ### Part 3: System & Media Control Developer
 *   **Focus:** Executing commands related to media playback and system functions.
-*   **Components:** Media/Volume Module, KODI Integration.
-*   **Primary Deliverable:** A module with functions to control system volume and interact with the KODI API for media playback.
+*   **Components:** Media/Volume Module.
+*   **Primary Deliverable:** A module with functions to control master system volume and send generic media commands (play/pause, next, etc.) to the operating system.
 
 ### Part 4: Information Task Developer
 *   **Focus:** Handling predefined commands that provide users with specific information.
@@ -165,15 +165,17 @@ This section expands on the team roles, detailing specific tasks and explaining 
 ### Part 3: System & Media Control Developer
 *   **Tasks:**
     *   Write Python functions to control system master volume (e.g., using `pycaw` for Windows or shell commands for Linux/macOS).
-    *   Implement a client to interact with the KODI JSON-RPC API for functions like play, pause, stop, and next/previous track.
+    *   Implement functions to send generic media key commands (play/pause, stop, next, previous) to the OS using appropriate libraries or command-line tools (`pyautogui`, `playerctl`, `osascript`).
     *   Ensure functions are modular and accept simple parameters (e.g., `set_volume(level)`).
 *   **Integration:**
-    *   **Provides:** A module with functions like `increase_volume()`, `kodi_play_pause()` that the **Backend Orchestrator (Part 6)** can call based on the parsed intent from **Part 2**.
+    *   **Provides:** A module with functions like `set_volume()`, `media_play_pause()` that the **Backend Orchestrator (Part 6)** can call based on the parsed intent from **Part 2**.
     *   **Returns:** A simple confirmation string (e.g., "Done" or "Playing media") to the Orchestrator. The following public functions must be exported for the main module to use:
         *   `set_volume(direction: str, value: int = None) -> str`: Adjusts the system volume. The `direction` can be "up" or "down". If `value` is provided, it sets the volume to a specific level. Returns a confirmation string like "Volume increased."
-        *   `kodi_play_pause() -> str`: Toggles the play/pause state of the KODI media player. Returns a confirmation string.
-        *   `kodi_stop() -> str`: Stops the currently playing media in KODI. Returns a confirmation string.
-        *   `kodi_next() -> str`: Skips to the next item in the KODI playlist. Returns a confirmation string.
+        *   `media_play_pause() -> str`: Toggles the play/pause state of the active media player. Returns a confirmation string.
+        *   `media_stop() -> str`: Stops the currently playing media. Returns a confirmation string.
+        *   `media_next() -> str`: Skips to the next item in the playlist. Returns a confirmation string.
+        *   `media_previous() -> str`: Goes back to the previous item in the playlist. Returns a confirmation string.
+        *   `play_song(song_name: str) -> str`: Searches for and plays the specified song on YouTube. Returns a confirmation string.
 
 ### Part 4: Information Task Developer
 *   **Tasks:**
@@ -205,3 +207,4 @@ This section expands on the team roles, detailing specific tasks and explaining 
     *   Write a module to format prompts and send requests to the LLM API, including any context from **Part 5**.
 *   **Integration:**
     *   **Acts as the central controller.** Connects all modules together and integrates with the LLM.
+    *   **Provides:** A module with a function `generate_response(query: str, context: str = None) -> str` that takes the user's query and optional search context, returning a text response from the LLM.
