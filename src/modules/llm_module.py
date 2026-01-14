@@ -92,7 +92,7 @@ def generate_response(query: str, context: Optional[str] = None, use_history: bo
 
     # Define the persona and instructions for the model
     system_prompt = (
-        "You are Lumen, a helpful voice assistant. Your responses should be brief, conversational, and suitable for being spoken aloud. "
+        "You are Alex, a helpful voice assistant. Your responses should be brief, conversational, and suitable for being spoken aloud. "
         "Do not use markdown or special formatting. "
         "IMPORTANT: If the user's input seems unclear, garbled, or doesn't make sense (possibly due to poor voice recognition), "
         "politely ask them to repeat or rephrase their question. For example: 'I didn't quite catch that. Could you please repeat?' or "
